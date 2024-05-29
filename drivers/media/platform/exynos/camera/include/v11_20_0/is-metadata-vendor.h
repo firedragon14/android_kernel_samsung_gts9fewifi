@@ -109,8 +109,8 @@ enum is_subscenario_id {
 	ISS_SUB_SCENARIO_UHD_30FPS = 40,                                            /* 40: UHD 30fps (HDR Off) */
 	ISS_SUB_SCENARIO_UHD_30FPS_WDR_AUTO = 41,                                   /* 41: UHD 30fps (HDR Auto) */
 	ISS_SUB_SCENARIO_UHD_30FPS_WDR_ON = 42,                                     /* 42: UHD 30fps (HDR On) */
-	ISS_SUB_SCENARIO_UHD_60FPS = 43,                                            /* 43: UHD 60fps (HDR Off) */
-	ISS_SUB_SCENARIO_UHD_60FPS_WDR_AUTO = 44,                                   /* 44: UHD 60fps (HDR Auto) */
+	ISS_SUB_SCENARIO_IDCG_FHD_VIDEO = 43,                                       /* 43: FHD IDCG (Video FHD) */
+	ISS_SUB_SCENARIO_IDCG_UHD_VIDEO = 44,                                       /* 44: UHD IDCG (Video UHD) */
 	ISS_SUB_SCENARIO_UHD_60FPS_WDR_ON = 45,                                     /* 45: UHD 60fps (HDR On)0:fps */
 	ISS_SUB_SCENARIO_FHD_VIDEO_HDR10_WDR_AUTO = 46,                             /* 46: HDR10+ video (HDR Auto) : FHD 30fps	 */
 	ISS_SUB_SCENARIO_UHD_VIDEO_HDR10_WDR_AUTO = 47,                             /* 47: HDR10+ video (HDR Auto) : UHD 30fps */
@@ -157,8 +157,8 @@ enum is_subscenario_id {
 	|| ((setfile) == ISS_SUB_SCENARIO_UHD_30FPS)			\
 	|| ((setfile) == ISS_SUB_SCENARIO_UHD_30FPS_WDR_AUTO)		\
 	|| ((setfile) == ISS_SUB_SCENARIO_UHD_30FPS_WDR_ON)		\
-	|| ((setfile) == ISS_SUB_SCENARIO_UHD_60FPS)			\
-	|| ((setfile) == ISS_SUB_SCENARIO_UHD_60FPS_WDR_AUTO)		\
+	|| ((setfile) == ISS_SUB_SCENARIO_IDCG_FHD_VIDEO)		\
+	|| ((setfile) == ISS_SUB_SCENARIO_IDCG_UHD_VIDEO)		\
 	|| ((setfile) == ISS_SUB_SCENARIO_VIDEO_HIGH_SPEED)		\
 	|| ((setfile) == ISS_SUB_SCENARIO_VIDEO_HIGH_SPEED_960FPS)	\
 	|| ((setfile) == ISS_SUB_SCENARIO_VIDEO_MERGED_HDR_AUTO))
@@ -1370,7 +1370,7 @@ struct camera2_aa_dm {
 	enum aa_moire_trigger		vendor_moireTrigger;
 	enum aa_sensor_state		vendor_sensorResultState;
 	enum aa_sensor_state		vendor_sensorAvailableState;
-	uint32_t			vendor_skipAFStateCapture; 
+	uint32_t			vendor_skipAFStateCapture;
 	uint32_t			vendor_nightModeSuggest; // 0(off), 1(on)
 	enum aa_night_indicator	vendor_nightIndicator;
 	uint32_t vendor_reserved[21];
@@ -2087,6 +2087,9 @@ enum camera_client_index {
 	CAMERA_APP_CATEGORY_TIKTOK             = 21,
 	CAMERA_APP_CATEGORY_SMART_STAY         = 22,
 	CAMERA_APP_CATEGORY_SABC               = 23,
+	CAMERA_APP_CATEGORY_SEAD               = 24,
+	CAMERA_APP_CATEGORY_POKEMONGO          = 25,
+	CAMERA_APP_CATEGORY_MEET               = 26,
 	CAMERA_APP_CATEGORY_MAX
 };
 

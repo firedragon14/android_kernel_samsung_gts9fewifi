@@ -68,6 +68,8 @@ int sensor_gc05a3_cis_init(struct v4l2_subdev *subdev)
 	cis->cis_data->sens_config_index_cur = 0;
 	CALL_CISOPS(cis, cis_data_calculation, subdev, cis->cis_data->sens_config_index_cur);
 
+	is_vendor_set_mipi_mode(cis);
+
 	return ret;
 }
 
@@ -149,6 +151,8 @@ int sensor_gc05a3_cis_stream_on(struct v4l2_subdev *subdev)
 
 	device = (struct is_device_sensor *)v4l2_get_subdev_hostdata(subdev);
 	WARN_ON(!device);
+
+	is_vendor_set_mipi_clock(device);
 
 	/* Sensor stream on */
 	IXC_MUTEX_LOCK(cis->ixc_lock);
@@ -289,7 +293,7 @@ int sensor_gc05a3_cis_get_otprom_data(struct v4l2_subdev *subdev, char *buf, boo
 		err("%s failed to read init_setting", __func__);
 		goto exit;
 	}
-	usleep_range(10000, 10000); /* sleep 10 msec */
+	usleep_range(10000, 10100); /* sleep 10 msec */
 	
 	/* 2. select otp bank */
 	ret = cis->ixc_ops->write8(cis->client, GC05A3_OTP_ACCESS_ADDR_HIGH, (GC05A3_BANK_SELECT_ADDR >> 8) & 0xFF);
@@ -329,9 +333,9 @@ int sensor_gc05a3_cis_get_otprom_data(struct v4l2_subdev *subdev, char *buf, boo
 		err("%s failed to read acc init_setting", __func__);
 		goto exit;
 	}
-	usleep_range(10000, 10000); /* sleep 10 msec */
+	usleep_range(10000, 10100); /* sleep 10 msec */
 
-	/*Read CAL data*/
+	/* Read CAL data */
 	ret = cis->ixc_ops->write8(cis->client, GC05A3_OTP_ACCESS_ADDR_HIGH, (start_addr >> 8) & 0xFF);
 	ret |= cis->ixc_ops->write8(cis->client, GC05A3_OTP_ACCESS_ADDR_LOW, start_addr & 0xFF);
 	ret |= cis->ixc_ops->write8(cis->client, GC05A3_OTP_READ_WO_ADDR, GC05A3_OTP_READ_WO_DATA);
@@ -344,7 +348,7 @@ int sensor_gc05a3_cis_get_otprom_data(struct v4l2_subdev *subdev, char *buf, boo
 	for (index = 0; index < GC05A3_MACRO_OTP_USED_CAL_SIZE; index++) {
 		ret = cis->ixc_ops->read8(cis->client, GC05A3_OTP_READ_ADDR, &buf[index]);
 		if (ret < 0) {
-			err("%s failed to otp_read(%d)", __func__, ret);
+			err("failed to otp_read(index:%d, ret:%d)", index, ret);
 			goto exit;
 		}
 	}
@@ -409,7 +413,6 @@ int cis_gc05a3_probe(struct i2c_client *client,
 
 	cis = &sensor_peri->cis;
 	cis->ctrl_delay = N_PLUS_TWO_FRAME;
-	cis->id = SENSOR_NAME_GC05A3;
 	cis->cis_ops = &cis_ops;
 
 	/* belows are depend on sensor cis. MUST check sensor spec */

@@ -420,6 +420,10 @@ int is_sec_sensorid_find(struct is_core *core);
 int is_sec_sensorid_find_front(struct is_core *core);
 int is_sec_run_fw_sel(int rom_id);
 
+#ifdef RETRY_READING_CAL
+int is_sec_read_rom(int rom_id);
+#endif
+
 int is_sec_readfw(struct is_core *core);
 #ifdef CAMERA_MODULE_COMPRESSED_FW_DUMP
 int is_sec_inflate_fw(u8 **buf, unsigned long *size);

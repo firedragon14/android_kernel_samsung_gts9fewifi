@@ -16,6 +16,7 @@
 #include "../utility/shub_utility.h"
 #include "../comm/shub_comm.h"
 #include "../sensor/light.h"
+#include "../sensorhub/shub_device.h"
 #include "../sensormanager/shub_sensor_type.h"
 #include "../utility/shub_file_manager.h"
 #include "shub_panel.h"
@@ -24,12 +25,14 @@
 
 #if IS_ENABLED(CONFIG_SEC_PANEL_NOTIFIER_V2) && IS_ENABLED(CONFIG_SHUB_PANEL_NOTIFY)
 #include <linux/sec_panel_notifier_v2.h>
-#include "../sensorhub/shub_device.h"
 #include "../sensor/light.h"
 #include "../sensormanager/shub_sensor_type.h"
 
-static struct panel_event_bl_data panel_event_data;
-static struct panel_event_dms_data panel_event_dms_data;
+#define PANEL_MAX (1)
+
+static struct panel_event_bl_data panel_event_data[PANEL_MAX];
+static struct panel_event_dms_data panel_event_dms_data[PANEL_MAX];
+static int panel_screen_mode[PANEL_MAX];
 static u8 copr_state;
 static u8 ub_state;
 #endif
@@ -38,7 +41,6 @@ static u8 ub_state;
 #define LCD_PANEL_SVC_OCTA "/sys/class/lcd/panel/SVC_OCTA"
 #define SVC_OCTA_DATA_SIZE 23
 
-static u8 lcd_type_flag;
 static char panel_ubid[SVC_OCTA_DATA_SIZE] = {0,};
 
 int get_panel_lcd_type(void)
@@ -55,17 +57,6 @@ int get_panel_lcd_type(void)
 		return ret;
 	}
 
-	/*
-	 * lcd_type_data[ret - 2], which type have different transmission ratio.
-	 * [0 ~ 2] : 0.7%, [3] : 15%, [4] : 40%
-	 */
-	if (lcd_type_data[ret - 2] >= '0' && lcd_type_data[ret - 2] <= '2')
-		lcd_type_flag = 0;
-	else if (lcd_type_data[ret - 2] == '3')
-		lcd_type_flag = 1;
-	else
-		lcd_type_flag = 2;
-	shub_infof("lcd_type_flag : %d", lcd_type_flag);
 
 	if (strstr(lcd_type_data, SDC_STR))
 		return SDC;
@@ -101,23 +92,6 @@ void init_shub_panel(void)
 void remove_shub_panel(void)
 {
 	shub_infof();
-}
-
-int save_panel_lcd_type(void)
-{
-	int ret = 0;
-
-	get_panel_lcd_type();
-
-	ret = shub_file_write_no_wait(UID_FILE_PATH, (char *)&lcd_type_flag, sizeof(lcd_type_flag), 0);
-	if (ret != sizeof(lcd_type_flag)) {
-		shub_errf("failed");
-		return -EIO;
-	}
-
-	shub_infof("save lcd_type_flag %d", lcd_type_flag);
-
-	return ret;
 }
 
 int get_panel_ubid(void)
@@ -174,25 +148,10 @@ bool is_panel_ubid_changed(void)
 	return false;
 }
 
-bool is_lcd_changed(void)
-{
-	int ret = 0;
-	u8 curr_lcd_type_flag = 0;
-
-	get_panel_lcd_type();
-	ret = shub_file_read(UID_FILE_PATH, &curr_lcd_type_flag, sizeof(curr_lcd_type_flag), 0);
-	if (ret != sizeof(curr_lcd_type_flag)) {
-		shub_errf("saved lcd type read failed %d", ret);
-		return false;
-	}
-	shub_infof("%d -> %d", lcd_type_flag, curr_lcd_type_flag);
-	return (lcd_type_flag != curr_lcd_type_flag);
-}
-
 #if IS_ENABLED(CONFIG_SEC_PANEL_NOTIFIER_V2) && IS_ENABLED(CONFIG_SHUB_PANEL_NOTIFY)
-int send_panel_information(struct panel_event_bl_data *evdata)
+int send_panel_information(int display_index, struct panel_event_bl_data *evdata)
 {
-	int buf[3] = { evdata->level, evdata->aor, evdata->acl_status};
+	int buf[5] = { display_index, evdata->level, evdata->aor, evdata->acl_status, evdata->gradual_acl_val };
 	int ret = 0;
 
 	//TODO: send brightness + aor_ratio information to sensorhub
@@ -254,9 +213,9 @@ int send_copr_state(void)
 	return ret;
 }
 
-int send_screen_mode_information(struct panel_notifier_event_data *evtdata)
+int send_screen_mode_information(int display_index, int screen_mode)
 {
-	int buf[2] = { evtdata->display_index, evtdata->d.screen_mode };
+	int buf[2] = { display_index, screen_mode };
 	int ret = 0;
 
 	ret = shub_send_command(CMD_SETVALUE, SENSOR_TYPE_LIGHT,
@@ -268,15 +227,31 @@ int send_screen_mode_information(struct panel_notifier_event_data *evtdata)
 static int panel_notifier_callback(struct notifier_block *nb, unsigned long event, void *data)
 {
 	struct panel_notifier_event_data *evtdata = data;
+	int index = evtdata->display_index;
 
+	if (index >= PANEL_MAX)
+	{
+		shub_infof("invalid display_index=%d", index);
+		return 0;
+	}
 	//shub_infof("event=%lu", event);
 
 	if (event == PANEL_EVENT_BL_STATE_CHANGED) {
-		// store these values for reset
-		memcpy(&panel_event_data, &evtdata->d.bl, sizeof(struct panel_event_bl_data));
-		shub_infof("PANEL_EVENT_BL_STATE_CHANGED, level(%d) aor(%d) acl_status(%d)\n",
-						evtdata->d.bl.level, evtdata->d.bl.aor, evtdata->d.bl.acl_status);
-		send_panel_information(&evtdata->d.bl);
+		struct shub_data_t *shub_data = get_shub_data();
+		u32 brightness_resolution = 1;
+
+		if (strcmp(shub_data->model_name, "S921") == 0 || strcmp(shub_data->model_name, "S926") == 0)
+			brightness_resolution = 10;
+
+		evtdata->d.bl.level = evtdata->d.bl.level / brightness_resolution;
+
+		if (panel_event_data[evtdata->display_index].level != evtdata->d.bl.level) {
+			// store these values for reset
+			memcpy(&panel_event_data[index], &evtdata->d.bl, sizeof(struct panel_event_bl_data));
+			shub_infof("PANEL_EVENT_BL_STATE_CHANGED, level(%d) aor(%d) acl_status(%d) acl_val(%d) resolution(%d)\n",
+							evtdata->d.bl.level, evtdata->d.bl.aor, evtdata->d.bl.acl_status, evtdata->d.bl.gradual_acl_val, brightness_resolution);
+			send_panel_information(index, &evtdata->d.bl);
+		}
 	} else if (event == PANEL_EVENT_UB_CON_STATE_CHANGED) {
 		if (evtdata->state != PANEL_EVENT_UB_CON_STATE_CONNECTED
 			&& evtdata->state != PANEL_EVENT_UB_CON_STATE_DISCONNECTED)	{
@@ -308,15 +283,17 @@ static int panel_notifier_callback(struct notifier_block *nb, unsigned long even
 			|| evtdata->state == PANEL_EVENT_COPR_STATE_DISABLED) {
 			struct shub_data_t *shub_data = get_shub_data();
 			copr_state = evtdata->state;
-			shub_infof("PANEL_EVENT_COPR_STATE_CHANGED, event(%d) lcd_status(%d)\n", 
+			shub_infof("PANEL_EVENT_COPR_STATE_CHANGED, event(%d) lcd_status(%d)\n",
 							evtdata->state, shub_data->lcd_status);
 			send_copr_state();
 		}
 	} else if (event == PANEL_EVENT_SCREEN_MODE_STATE_CHANGED) {
-		memcpy(&panel_event_dms_data, &evtdata->d.dms, sizeof(struct panel_event_dms_data));
+		memcpy(&panel_event_dms_data[index], &evtdata->d.dms, sizeof(struct panel_event_dms_data));
+		panel_screen_mode[index] = evtdata->d.screen_mode;
+
 		shub_infof("panel screen mode %d %d", evtdata->display_index, evtdata->d.screen_mode);
 
-		send_screen_mode_information(evtdata);
+		send_screen_mode_information(index, evtdata->d.screen_mode);
 	}
 
 	return 0;
@@ -329,9 +306,14 @@ struct notifier_block panel_notify =  {
 void init_shub_panel_callback(void)
 {
 	int ret = 0;
+	int i = 0;
 
 	copr_state = PANEL_EVENT_COPR_STATE_ENABLED;
 	ub_state = PANEL_EVENT_UB_CON_STATE_CONNECTED;
+
+	for (i = 0; i < PANEL_MAX; i++) {
+		panel_event_data[i].level = -1;
+	}
 
 	ret = panel_notifier_register(&panel_notify);
 	if (ret < 0)
@@ -347,8 +329,17 @@ void remove_shub_panel_callback(void)
 
 void sync_panel_state(void)
 {
+	int i = 0;
+
 	send_ub_state();
 	send_copr_state();
+
+	for (i = 0; i < PANEL_MAX; i++)
+	{
+		if (panel_event_data[i].level != -1)
+			send_panel_information(i, &panel_event_data[i]);
+		send_screen_mode_information(i, panel_screen_mode[i]);
+	}
 }
 #else
 void init_shub_panel_callback(void) {}

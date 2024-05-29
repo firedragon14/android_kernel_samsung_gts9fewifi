@@ -60,12 +60,12 @@ int gpexbe_clock_get_rate_asv_table(struct freq_volt *fv_array, int level_num)
 	return ret;
 }
 
-int gpexbe_clock_get_boot_freq(void)
+int gpexbe_clock_get_boot_freq()
 {
 	return pm_info.boot_clock;
 }
 
-int gpexbe_clock_get_max_freq(void)
+int gpexbe_clock_get_max_freq()
 {
 	return pm_info.max_clock_limit;
 }
@@ -89,12 +89,12 @@ int gpexbe_clock_set_rate(int clk)
 	return ret;
 }
 
-int gpexbe_clock_get_rate(void)
+int gpexbe_clock_get_rate()
 {
 	return cal_dfs_cached_get_rate(cal_id);
 }
 
-int gpexbe_clock_init(void)
+int gpexbe_clock_init()
 {
 	cal_id = gpexbe_devicetree_get_int(g3d_cmu_cal_id);
 
@@ -111,7 +111,7 @@ int gpexbe_clock_init(void)
 	return 0;
 }
 
-void gpexbe_clock_term(void)
+void gpexbe_clock_term()
 {
 	cal_id = 0;
 	pm_info.boot_clock = 0;

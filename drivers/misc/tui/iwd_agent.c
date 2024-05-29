@@ -229,7 +229,7 @@ static int close_driver(ClosePeripheral_cmd_t *cmd)
 	return 0;
 }
 
-static void reboot_phone(void)
+static void reboot_phone()
 {
 	pr_debug(TUIHW_LOG_TAG " %s >>\n", __func__);
 	atomic_set(&reboot_flag, 1);

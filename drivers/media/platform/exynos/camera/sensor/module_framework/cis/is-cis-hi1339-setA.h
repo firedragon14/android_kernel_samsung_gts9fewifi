@@ -14,6 +14,9 @@
 
 #include "is-cis.h"
 #include "is-cis-hi1339.h"
+#ifdef USE_CAMERA_ADAPTIVE_MIPI
+#include "is-cis-hi1339-setA-adaptive-mipi.h"
+#endif
 
 /*
  * [Mode Information]
@@ -2473,6 +2476,10 @@ static const struct sensor_cis_info sensor_hi1339_info_A = {
 	.cit_compensation_threshold = 15,
 	.mode_infos = sensor_hi1339_mode_infos_A,
 	.mode_count = ARRAY_SIZE(sensor_hi1339_mode_infos_A),
+#ifdef USE_CAMERA_ADAPTIVE_MIPI
+	.mipi_mode = sensor_hi1339_setfile_A_mipi_sensor_mode,
+	.mipi_mode_count = ARRAY_SIZE(sensor_hi1339_setfile_A_mipi_sensor_mode),
+#endif
 	.priv = (void *)&sensor_hi1339_private_data_A,
 };
 #endif

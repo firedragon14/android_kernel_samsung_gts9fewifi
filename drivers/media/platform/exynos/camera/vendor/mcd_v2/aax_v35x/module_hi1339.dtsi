@@ -212,6 +212,14 @@
 						vc2 = </* in */ 2 HW_FORMAT_UNKNOWN 0 0		/* out */ HW_FORMAT_UNKNOWN VC_NOTHING 0 0>;
 						vc3 = </* in */ 3 HW_FORMAT_UNKNOWN 0 0		/* out */ HW_FORMAT_UNKNOWN VC_NOTHING 0 0>;
 					};
+					/* Secure camera */
+					mode18 {
+						common = <4128 3096 30 0 0 CSI_DATA_LANES_4 1118 CSI_MODE_VC_ONLY LRTE_DISABLE PD_NONE EX_PDSTAT_OFF>;
+						vc0 = </* in */ 0 HW_FORMAT_RAW10 4128 3096	/* out */ HW_FORMAT_RAW10 VC_NOTHING 2064 1548>;
+						vc1 = </* in */ 1 HW_FORMAT_UNKNOWN 0 0		/* out */ HW_FORMAT_UNKNOWN VC_NOTHING 0 0>;
+						vc2 = </* in */ 2 HW_FORMAT_UNKNOWN 0 0		/* out */ HW_FORMAT_UNKNOWN VC_NOTHING 0 0>;
+						vc3 = </* in */ 3 HW_FORMAT_UNKNOWN 0 0		/* out */ HW_FORMAT_UNKNOWN VC_NOTHING 0 0>;
+					};
 				};
 
 				power_seq {

@@ -240,27 +240,27 @@ void mali_exynos_set_thread_affinity(void)
 	gpex_cmar_sched_set_affinity();
 }
 
-void mali_exynos_coherency_reg_map(void)
+void mali_exynos_coherency_reg_map()
 {
 	gpexbe_llc_coherency_reg_map();
 }
 
-void mali_exynos_coherency_reg_unmap(void)
+void mali_exynos_coherency_reg_unmap()
 {
 	gpexbe_llc_coherency_reg_unmap();
 }
 
-void mali_exynos_coherency_set_coherency_feature(void)
+void mali_exynos_coherency_set_coherency_feature()
 {
 	gpexbe_llc_coherency_set_coherency_feature();
 }
 
-void mali_exynos_llc_set_aruser(void)
+void mali_exynos_llc_set_aruser()
 {
 	gpexbe_llc_coherency_set_aruser();
 }
 
-void mali_exynos_llc_set_awuser(void)
+void mali_exynos_llc_set_awuser()
 {
 	gpexbe_llc_coherency_set_awuser();
 }

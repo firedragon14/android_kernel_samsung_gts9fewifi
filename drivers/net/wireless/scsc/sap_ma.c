@@ -41,12 +41,12 @@ static int sap_ma_notifier(struct slsi_dev *sdev, unsigned long event);
 
 static DEFINE_SPINLOCK(sap_ma_lock);
 
-void slsi_sap_ma_lock(void)
+void slsi_sap_ma_lock()
 {
 	spin_lock_bh(&sap_ma_lock);
 }
 
-void slsi_sap_ma_unlock(void)
+void slsi_sap_ma_unlock()
 {
 	spin_unlock_bh(&sap_ma_lock);
 }
@@ -967,6 +967,7 @@ static void slsi_rx_data_ind(struct slsi_dev *sdev, struct net_device *dev, stru
 	/* Populate wake reason stats here */
 	if (unlikely(slsi_skb_cb_get(skb)->wakeup)) {
 		schedule_work(&sdev->wakeup_time_work);
+		skb->mark = SLSI_WAKEUP_PKT_MARK;
 		slsi_rx_update_wake_stats(sdev, eth_hdr, skb->len, skb);
 	}
 

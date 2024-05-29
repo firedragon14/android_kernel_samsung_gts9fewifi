@@ -34,6 +34,8 @@ struct panel_regulator {
 	u32 type;
 	struct panel_regulator_funcs *funcs;
 	struct list_head head;
+	struct mutex lock;
+	bool enabled;
 };
 
 struct panel_regulator_funcs {

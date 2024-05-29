@@ -94,7 +94,7 @@ int gpex_platform_init(struct device **dev)
 	return 0;
 }
 
-void gpex_platform_term(void)
+void gpex_platform_term()
 {
 	runtime_test_runner_term();
 

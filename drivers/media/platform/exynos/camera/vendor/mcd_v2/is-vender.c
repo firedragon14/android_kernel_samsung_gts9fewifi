@@ -1221,6 +1221,30 @@ int is_vendor_rom_parse_dt(struct device_node *dnode, int rom_id)
 	DT_READ_U32_DEFAULT(dnode, "rom_dualized_xtc_cal_data_start_addr", finfo->rom_dualized_xtc_cal_data_start_addr, -1);
 	DT_READ_U32_DEFAULT(dnode, "rom_dualized_xtc_cal_data_size", finfo->rom_dualized_xtc_cal_data_size, -1);
 
+	rom_af_cal_addr_spec = of_get_property(dnode, "rom_dualized_af_cal_addr", &finfo->rom_dualized_af_cal_addr_len);
+	if (rom_af_cal_addr_spec) {
+		finfo->rom_dualized_af_cal_addr_len /= (unsigned int)sizeof(*rom_af_cal_addr_spec);
+		BUG_ON(finfo->rom_dualized_af_cal_addr_len > AF_CAL_MAX);
+		ret = of_property_read_u32_array(dnode, "rom_dualized_af_cal_addr", finfo->rom_dualized_af_cal_addr, finfo->rom_dualized_af_cal_addr_len);
+	}
+
+	rom_ois_list_spec = of_get_property(dnode, "rom_dualized_ois_list", &finfo->rom_dualized_ois_list_len);
+	if (rom_ois_list_spec) {
+		finfo->rom_dualized_ois_list_len /= (unsigned int)sizeof(*rom_ois_list_spec);
+		ret = of_property_read_u32_array(dnode, "rom_dualized_ois_list",
+			finfo->rom_dualized_ois_list, finfo->rom_dualized_ois_list_len);
+		if (ret)
+			info("rom_dualized_ois_list read is fail(%d)", ret);
+#ifdef IS_DEVICE_ROM_DEBUG
+		else {
+			info("rom_dualized_ois_list :");
+			for (i = 0; i < finfo->rom_dualized_ois_list_len; i++)
+				info(" %d ", finfo->rom_dualized_ois_list[i]);
+			info("\n");
+		}
+#endif
+	}
+
 #ifdef CONFIG_SEC_CAL_ENABLE
 	finfo->use_dualized_standard_cal = of_property_read_bool(dnode, "use_dualized_standard_cal");
 
@@ -2529,6 +2553,18 @@ int release_shared_rsc(struct ois_mcu_dev *mcu)
 	return atomic_dec_return(&mcu->shared_rsc_count);
 }
 
+void is_vendor_mcu_power_on_wait(void)
+{
+	struct is_core *core = NULL;
+	struct ois_mcu_dev *mcu = NULL;
+	core = is_get_is_core();
+	if (!core->mcu)
+		return;
+
+	mcu = core->mcu;
+	cancel_work_sync(&mcu->mcu_power_on_work);
+}
+
 void is_vender_mcu_power_on(bool use_shared_rsc)
 {
 #if defined(CONFIG_CAMERA_USE_INTERNAL_MCU)
@@ -2549,15 +2585,14 @@ void is_vender_mcu_power_on(bool use_shared_rsc)
 			info_mcu("%s: mcu is already on. active count = %d\n", __func__, active_count);
 			return;
 		}
-	}
-
-	ois_mcu_power_ctrl(mcu, 0x1);
-	ois_mcu_load_binary(mcu);
-	ois_mcu_core_ctrl(mcu, 0x1);
-	if (!use_shared_rsc)
+		schedule_work(&mcu->mcu_power_on_work);
+	} else {
+		ois_mcu_power_ctrl(mcu, 0x1);
+		ois_mcu_load_binary(mcu);
+		ois_mcu_core_ctrl(mcu, 0x1);
 		ois_mcu_device_ctrl(mcu);
-
-	info_mcu("%s: mcu on.\n", __func__);
+		info_mcu("%s: mcu on.\n", __func__);
+	}
 #endif
 }
 
@@ -2575,6 +2610,7 @@ void is_vender_mcu_power_off(bool use_shared_rsc)
 	mcu = core->mcu;
 
 	if (use_shared_rsc) {
+		is_vendor_mcu_power_on_wait();
 		active_count = release_shared_rsc(mcu);
 		mcu->current_rsc_count = active_count;
 		if (active_count != MCU_SHARED_SRC_OFF_COUNT) {

@@ -24,6 +24,7 @@
 #include "is-sec-define.h"
 #include "is-device-sensor-peri.h"
 #include "is-sysfs.h"
+#include "is-vender-test-sensor.h"
 
 static int is_vender_caminfo_open(struct inode *inode, struct file *file)
 {
@@ -342,6 +343,13 @@ static int is_vender_caminfo_sec2lsi_cmd_get_module_info(void __user *user_data)
 		} else {
 			info("index :%d", finfo->rom_header_version_start_addr);
 		}
+
+#ifdef RETRY_READING_CAL
+		if (!test_bit(IS_ROM_STATE_SKIP_CAL_LOADING, &finfo->rom_state) &&
+			!test_bit(IS_ROM_STATE_CAL_READ_DONE, &finfo->rom_state)) {
+			is_sec_read_rom(rom_id);
+		}
+#endif
 
 		if (!test_bit(IS_ROM_STATE_CAL_READ_DONE, &finfo->rom_state)) {
 			info("%s : ROM[%d] cal data not read, skipping sec2lsi", __func__, rom_id);
@@ -746,6 +754,14 @@ static long is_vender_caminfo_ioctl(struct file *file, unsigned int cmd, unsigne
 #ifdef CONFIG_OIS_USE
 	case CAMINFO_CMD_ID_GET_OIS_HALL_DATA:
 		ret = is_vender_caminfo_cmd_get_ois_hall_data(ioctl_cmd.data);
+		break;
+#endif
+#ifdef USE_SENSOR_DEBUG
+	case CAMINFO_CMD_ID_SET_MIPI_PHY:
+		ret = is_vender_caminfo_cmd_set_mipi_phy(ioctl_cmd.data);
+		break;
+	case CAMINFO_CMD_ID_GET_MIPI_PHY:
+		ret = is_vender_caminfo_cmd_get_mipi_phy(ioctl_cmd.data);
 		break;
 #endif
 #ifdef CONFIG_SEC_CAL_ENABLE
