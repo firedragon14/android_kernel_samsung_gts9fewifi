@@ -25,6 +25,15 @@
 #include <linux/slab.h>
 #include <linux/notifier.h>
 
+#if defined(CONFIG_SHUB_KUNIT)
+#include <kunit/mock.h>
+#define __mockable __weak
+#define __visible_for_testing
+#else
+#define __mockable
+#define __visible_for_testing static
+#endif
+
 #define FILE_MANAGER	0xFB
 enum {
 	FM_READ = 0,
@@ -120,7 +129,7 @@ static int _shub_file_rw(char type, bool wait)
 	return result;
 }
 
-static int _shub_file_write(char *path, char *buf, int buf_len, long long pos, bool wait)
+__visible_for_testing int __mockable _shub_file_write(char *path, char *buf, int buf_len, long long pos, bool wait)
 {
 	int ret;
 
@@ -155,7 +164,7 @@ int shub_file_write(char *path, char *buf, int buf_len, long long pos)
 	return _shub_file_write(path, buf, buf_len, pos, true);
 }
 
-int shub_file_read(char *path, char *buf, int buf_len, long long pos)
+int __mockable shub_file_read(char *path, char *buf, int buf_len, long long pos)
 {
 	int ret;
 

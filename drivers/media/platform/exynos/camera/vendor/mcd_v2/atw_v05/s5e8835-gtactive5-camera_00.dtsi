@@ -260,6 +260,7 @@
 		id = <1>; /* matching is_sensor id */
 		setfile = "setA";
 		status = "okay";
+		use_initial_ae;
 	};
 
 	front_otprom@6E { 

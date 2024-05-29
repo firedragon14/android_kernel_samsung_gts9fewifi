@@ -1791,8 +1791,6 @@ int __ncp_ion_map(struct npu_session *session, struct drv_usr_share *usr_data)
 	ret = npu_memory_map(session->memory, ncp_mem_buf, npu_get_configs(NPU_PBHA_HINT_11));
 	if (unlikely(ret)) {
 		npu_err("npu_memory_map is fail(%d).\n", ret);
-		if (ncp_mem_buf)
-			kfree(ncp_mem_buf);
 		goto err_free;
 	}
 

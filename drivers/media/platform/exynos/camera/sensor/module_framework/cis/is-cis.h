@@ -104,6 +104,8 @@ struct sensor_cis_mode_info {
 	u16 min_cit;
 	u16 max_cit_margin;
 	u16 align_cit;
+	u16 align_offset_cit;
+	u16 align_fll;
 	u16 fine_integration_time;
 
 	bool use_mode_analog_gain;
