@@ -1715,7 +1715,7 @@ static int sec_ts_parse_dt(struct i2c_client *client)
 
 	pdata->regulator_boot_on = of_property_read_bool(np, "sec,regulator_boot_on");
 	pdata->support_sidegesture = of_property_read_bool(np, "sec,support_sidegesture");
-	pdata->support_dex = of_property_read_bool(np, "support_dex_mode");
+	pdata->support_dex = true;
 
 #ifdef CONFIG_SEC_FACTORY
 	pdata->support_mt_pressure = true;

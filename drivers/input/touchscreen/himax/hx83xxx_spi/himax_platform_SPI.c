@@ -368,7 +368,7 @@ int himax_parse_dt(struct himax_ts_data *ts,
 
 	pdata->support_aot = of_property_read_bool(dt, "support_aot");
 	pdata->enable_sysinput_enabled = of_property_read_bool(dt, "himax,enable_sysinput_enabled");
-	pdata->support_dex = of_property_read_bool(dt, "support_dex");
+	pdata->support_dex = true;
 	pdata->notify_tsp_esd = of_property_read_bool(dt, "himax,notify_tsp_esd");
 	pdata->support_ear_detect = of_property_read_bool(dt, "himax,support_ear_detect_mode");
 	pdata->prox_lp_scan_enabled = of_property_read_bool(dt, "himax,prox_lp_scan_enabled");

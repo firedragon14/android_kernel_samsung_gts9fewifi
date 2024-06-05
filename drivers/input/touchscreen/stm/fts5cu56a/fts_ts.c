@@ -2588,7 +2588,7 @@ static int fts_parse_dt(struct i2c_client *client)
 	if (of_property_read_bool(np, "stm,support_gesture"))
 		pdata->support_sidegesture = true;
 
-	pdata->support_dex = of_property_read_bool(np, "support_dex_mode");
+	pdata->support_dex = true;
 	pdata->support_ear_detect = of_property_read_bool(np, "support_ear_detect");
 	pdata->sync_reportrate_120 = of_property_read_bool(np, "sync-reportrate-120");
 	pdata->support_open_short_test = of_property_read_bool(np, "support_open_short_test");
